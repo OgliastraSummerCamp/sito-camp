@@ -44,7 +44,8 @@
     <button onclick="logout()">Logout</button>
   </nav>
   <h1>Gestione Iscritti</h1>
-  <form id="regForm">
+<form id="regForm" onsubmit="salvaIscrizioneStaff(event)">
+
     <input type="hidden" name="id">
     <fieldset>
     <legend>Bambino</legend>
@@ -192,6 +193,52 @@ function deleteIscrittoById(id){
     saveList(list);
     render();
   }
+}
+function salvaIscrizioneStaff(event) {
+  event.preventDefault(); // blocca invio automatico
+
+  const url = "https://script.google.com/macros/s/PASTE_LA_TUA_URL/exec";  // ← incolla qui il tuo URL
+
+  const dati = new URLSearchParams();
+  dati.append("foglio", "Iscrizioni_Staff");
+
+  dati.append("nomeBambino", document.getElementsByName("bambino_nome")[0].value);
+  dati.append("luogoNascitaB", document.getElementsByName("bambino_luogo_nascita")[0].value);
+  dati.append("dataNascitaB", document.getElementsByName("bambino_data_nascita")[0].value);
+  dati.append("cfBambino", document.getElementsByName("bambino_cf")[0].value);
+  dati.append("allergie", document.getElementsByName("intolleranze")[0].value);
+  dati.append("terapie", document.getElementsByName("terapie")[0].value);
+  dati.append("autorizzazione", document.getElementsByName("privacy_foto")[0].value);
+
+  dati.append("nomeGenitore", document.getElementsByName("genitore_nome")[0].value);
+  dati.append("luogoNascitaG", document.getElementsByName("genitore_luogo_nascita")[0].value);
+  dati.append("dataNascitaG", document.getElementsByName("genitore_data_nascita")[0].value);
+  dati.append("cfGenitore", document.getElementsByName("genitore_cf")[0].value);
+  dati.append("residenza", document.getElementsByName("genitore_res")[0].value);
+  dati.append("email", document.getElementsByName("email")[0].value);
+  dati.append("telefono", document.getElementsByName("telefono")[0].value);
+
+  fetch(url, {
+    method: "POST",
+    body: dati
+  })
+  .then(res => res.text())
+  .then(risposta => {
+    alert("Risposta: " + risposta);
+    document.getElementById("regForm").reset(); // pulisce il form
+  });
+}
+
+
+  fetch(url, {
+    method: "POST",
+    body: dati
+  })
+  .then(res => res.text())
+  .then(risposta => {
+    alert("Risposta dal server: " + risposta);
+    document.getElementById("form-iscrizione").reset();
+  });
 }
 
 </script>
