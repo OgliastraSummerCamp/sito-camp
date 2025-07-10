@@ -1,0 +1,326 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Presenze - Area Staff</title>
+<style>
+  body{margin:0;font-family:"Segoe UI",sans-serif;background:#fceabb;min-height:100vh;padding:0 20px;}
+  .navbar{width:100%;background:#ffffffaa;backdrop-filter:blur(6px);display:flex;gap:20px;align-items:center;padding:10px 20px;box-shadow:0 2px 6px rgba(0,0,0,0.1);position:fixed;top:0;left:0;}
+  .navbar a{color:#0077cc;text-decoration:none;padding:8px 10px;border-radius:6px;}
+  .navbar a:hover{background:#0077cc;color:#fff;}
+  h1{margin-top:120px;text-align:center;}
+  #controls{text-align:center;margin:20px 0;}
+  table{margin:0 auto 40px;border-collapse:collapse;width:95%;max-width:900px;}
+  th,td{border:1px solid #ccc;padding:8px 6px;font-size:15px;text-align:left;}
+  th{background:#fff9c4;}
+  tr.assente{background:#ffe5e5;} tr.nopasto{background:#e1f0ff;} tr.pasto{background:#e4fce4;}
+  select{padding:4px 6px;border-radius:4px;font-size:14px;}
+
+  /* Modal */
+  #modal{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:1000;}
+  #modal>div{background:#fff;border-radius:10px;padding:20px;max-width:500px;width:90%;box-shadow:0 4px 12px rgba(0,0,0,0.3);}
+  #modal h3{margin-top:0;}
+</style>
+</head>
+<body onload="init()">
+  <nav class="navbar">
+    <a href="staff-dashboard.html">Home</a>
+    <a href="staff-iscritti.html">Iscritti</a>
+    <a href="staff-presenze.html">Presenze</a>
+    <a href="staff-pagamenti.html">Pagamenti</a>
+<a href="camp-spese.html">Spese</a>
+
+    <a href="#" onclick="logout()">Logout</a>
+  </nav>
+
+  <h1>Gestione Presenze</h1>
+
+  <div id="controls">
+    <div id="dailyStats" style="margin-top:8px;font-weight:bold;">Presenze: <span id="totPres">0</span> | Pasti: <span id="totPasti">0</span></div>
+    <input type="date" id="selDate">
+  </div>
+
+  <table id="tablePresenze">
+    <thead><tr><th id="thName" style="cursor:pointer;">Bambino ▲</th><th id="thStatus" style="cursor:pointer;">Stato</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="modal" onclick="this.style.display='none'"><div onclick="event.stopPropagation()"><h3 id="modTitle"></h3><div id="modBody"></div><div id="yearTotals" style="margin-top:10px;font-weight:bold;"></div>
+<div style="text-align:right;"><button onclick='document.getElementById("modal").style.display="none"'>Chiudi</button></div></div></div>
+
+<script>
+function logout(){sessionStorage.removeItem("loggedStaff");window.location='login-staff.html';}
+function checkSession(){if(!sessionStorage.getItem("loggedStaff")) window.location='login-staff.html';}
+
+let iscritti=[], presenze={};
+let sortKey='name';
+let sortDir=1;
+const keyIs="campIscritti", keyPr="campPresenze";
+
+const savePresenze=()=>localStorage.setItem(keyPr,JSON.stringify(presenze));
+
+function loadData(){
+  iscritti = JSON.parse(localStorage.getItem(keyIs)||"[]");
+  presenze = JSON.parse(localStorage.getItem(keyPr)||"{}");
+}
+
+function ensureIds(){
+  let changed=false;
+  iscritti.forEach((b,i)=>{
+    if(!b.id){
+      const oldId=(b.bambino_nome||"child")+"_"+(b.bambino_data_nascita||i);
+      const newId="id_"+Date.now()+"_"+i;
+      // migra
+      for(const day in presenze){
+        if(presenze[day][oldId]){
+          presenze[day][newId]=presenze[day][oldId];
+          delete presenze[day][oldId];
+        }
+      }
+      b.id=newId;
+      changed=true;
+    }
+  });
+  if(changed){
+    localStorage.setItem(keyIs,JSON.stringify(iscritti));
+    savePresenze();
+  }
+}
+
+function displayName(b){
+  return b.bambino_nome||((b.b_nome||"")+" "+(b.b_cognome||"")).trim()||"Senza nome";
+}
+
+function render(){
+  updateDailyStats(document.getElementById('selDate').value);
+  const d=document.getElementById("selDate").value;
+  if(!d) return;
+  if(!presenze[d]) presenze[d]={};
+  const tbody=document.querySelector("#tablePresenze tbody");
+  tbody.innerHTML="";
+  let tableChanged=false;
+
+  const list=[...iscritti];
+  if(sortKey==="name"){
+    list.sort((a,b)=> sortDir*displayName(a).localeCompare(displayName(b),"it",{sensitivity:"base"}));
+  } else {
+    const getS = x=> presenze[d] && presenze[d][x.id] ? presenze[d][x.id] : "assente";
+    list.sort((a,b)=> sortDir*getS(a).localeCompare(getS(b),"it",{sensitivity:"base"}));
+  }
+  list.forEach(b=>{
+    if(!presenze[d][b.id]){
+      presenze[d][b.id]="assente";
+      tableChanged=true;
+    }
+    const stato=presenze[d][b.id];
+    const tr=document.createElement("tr"); tr.className=stato;
+    const td1=document.createElement("td");
+    td1.innerHTML=`<span style="cursor:pointer;text-decoration:underline;">${displayName(b)}</span>`;
+    td1.onclick=()=>showDetails(b);
+    const td2=document.createElement("td");
+    const sel=document.createElement("select");
+    ["assente","nopasto","pasto"].forEach(o=>{
+      const op=document.createElement("option");
+      op.value=o; op.textContent=o==="nopasto"?"No pasto":o.charAt(0).toUpperCase()+o.slice(1);
+      if(o===stato) op.selected=true;
+      sel.appendChild(op);
+    });
+    sel.onchange=()=>{presenze[d][b.id]=sel.value; savePresenze(); 
+document.getElementById("thName").onclick = () => {
+  if(sortKey==='name'){ sortDir*=-1; } else { sortKey='name'; sortDir=1; }
+  updateHeaderArrows();
+  render();
+};
+document.getElementById("thStatus").onclick = () => {
+  if(sortKey==='status'){ sortDir*=-1; } else { sortKey='status'; sortDir=1; }
+  updateHeaderArrows();
+  render();
+};
+function updateHeaderArrows(){
+  const arrow = sortDir===1? ' ▲':' ▼';
+  document.getElementById("thName").textContent = 'Bambino' + (sortKey==='name'?arrow:'');
+  document.getElementById("thStatus").textContent = 'Stato' + (sortKey==='status'?arrow:'');
+}
+
+  updateHeaderArrows();
+  render();}
+    td2.appendChild(sel);
+    tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
+  });
+
+  if(tableChanged) savePresenze();
+}
+
+
+function showDetails(b){
+  const m = document.getElementById("modal");
+  document.getElementById("modTitle").textContent = displayName(b);
+  const body = document.getElementById("modBody");
+  body.innerHTML = "";
+
+  // Build month navigation container
+  const nav = document.createElement("div");
+  nav.style.display = "flex";
+  nav.style.justifyContent = "space-between";
+  nav.style.alignItems = "center";
+  nav.style.marginBottom = "8px";
+  const btnPrev = document.createElement("button");
+  btnPrev.textContent = "◀";
+  const btnNext = document.createElement("button");
+  btnNext.textContent = "▶";
+  const monthLabel = document.createElement("strong");
+  monthLabel.style.flex = "1";
+  monthLabel.style.textAlign = "center";
+  nav.appendChild(btnPrev);
+  nav.appendChild(monthLabel);
+  nav.appendChild(btnNext);
+  body.appendChild(nav);
+
+  const calContainer = document.createElement("div");
+  body.appendChild(calContainer);
+
+  const statDiv = document.createElement("div");
+  statDiv.style.marginTop = "8px";
+  body.appendChild(statDiv);
+
+  // Year totals div
+  const yearDiv = document.getElementById("yearTotals");
+  yearDiv.innerHTML = "";
+
+  // Determine list of days for kid
+  const kidId = b.id;
+  const dateKeys = Object.keys(presenze).sort();
+  if(dateKeys.length === 0){calContainer.textContent = "Nessuna presenza registrata"; return;}
+
+  // Current index month
+  let currentMonthIndex = dateKeys.length - 1; // last day recorded
+  // helper to set to first day of month
+  function setIndexToMonthStart(idx){
+    const d = dateKeys[idx];
+    const y = d.substring(0,7); // YYYY-MM
+    // move back until first day of that month
+    while(idx>0 && dateKeys[idx-1].startsWith(y)){ idx--; }
+    return idx;
+  }
+  currentMonthIndex = setIndexToMonthStart(currentMonthIndex);
+
+  function renderMonth(){
+    const d0 = dateKeys[currentMonthIndex];
+    const yearMonth = d0.substring(0,7); // YYYY-MM
+    const [yyyy, mm] = yearMonth.split("-");
+    monthLabel.textContent = new Date(yearMonth+"-01").toLocaleDateString('it-IT',{month:'long', year:'numeric'});
+    calContainer.innerHTML = "";
+
+    // build calendar table
+    const firstDay = new Date(yearMonth+"-01");
+    const lastDay = new Date(yyyy, parseInt(mm), 0).getDate();
+    const table = document.createElement("table");
+    table.style.borderCollapse="collapse";
+    const head = document.createElement("tr");
+    ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"].forEach(w=>{
+      const th=document.createElement("th");
+      th.textContent=w;
+      head.appendChild(th);
+    });
+    table.appendChild(head);
+    let tr=document.createElement("tr");
+    let weekday=(firstDay.getDay()+6)%7; // Monday=0
+    for(let i=0;i<weekday;i++){
+      tr.appendChild(document.createElement("td"));
+    }
+    let monthPasti=0, monthIngressi=0;
+    for(let day=1; day<=lastDay; day++){
+      if(weekday===7){table.appendChild(tr); tr=document.createElement("tr"); weekday=0;}
+      const td=document.createElement("td");
+      td.textContent=day;
+      const key=`${yearMonth}-${String(day).padStart(2,'0')}`;
+      
+const raw = presenze[key] && presenze[key][kidId] ? presenze[key][kidId] : "assente";
+if(raw !== "assente"){
+  td.style.background = raw==="pasto" ? "#c8f7c5" : "#b7d8ff";
+  monthIngressi++;
+  if(raw==="pasto") monthPasti++;
+}
+      tr.appendChild(td);
+      weekday++;
+    }
+    if(tr.children.length) table.appendChild(tr);
+    calContainer.appendChild(table);
+    statDiv.textContent = `Ingressi mese: ${monthIngressi} | Pasti mese: ${monthPasti}`;
+  }
+
+  btnPrev.onclick = () => {
+    // move to previous month
+    const currentYM = dateKeys[currentMonthIndex].substring(0,7);
+    while(currentMonthIndex>0 && dateKeys[currentMonthIndex].startsWith(currentYM)){
+      currentMonthIndex--;
+    }
+    currentMonthIndex = setIndexToMonthStart(currentMonthIndex);
+    renderMonth();
+  };
+  btnNext.onclick = () => {
+    const currentYM = dateKeys[currentMonthIndex].substring(0,7);
+    const total = dateKeys.length;
+    while(currentMonthIndex<total-1 && dateKeys[currentMonthIndex].startsWith(currentYM)){
+      currentMonthIndex++;
+    }
+    currentMonthIndex = setIndexToMonthStart(currentMonthIndex);
+    renderMonth();
+  };
+
+  // Annual totals
+  let yearIngressi=0, yearPasti=0;
+  dateKeys.forEach(k=>{
+    const st = presenze[k][kidId];
+    if(st && st!=='assente'){
+      yearIngressi++;
+      if(st==='pasto') yearPasti++;
+    }
+  });
+  yearDiv.textContent = `Totale ANNUALE ingressi: ${yearIngressi} | Pasti: ${yearPasti}`;
+
+  renderMonth();
+  m.style.display = "flex";
+}
+
+
+
+function updateDailyStats(dayKey){
+  const dayObj = presenze[dayKey] || {};
+  let pres = 0, pasto = 0;
+  Object.values(dayObj).forEach(st => {
+    if(st !== "assente"){ pres++; }
+    if(st === "pasto"){ pasto++; }
+  });
+  document.getElementById("totPres").textContent = pres;
+  document.getElementById("totPasti").textContent = pasto;
+}
+
+function init(){
+  window.addEventListener('beforeunload', savePresenze);
+  checkSession();
+  loadData();
+  ensureIds();
+  
+  const dateIn=document.getElementById("selDate");
+  // Ripristina la data usata l'ultima volta (salvata in sessionStorage)
+  const lastDate=sessionStorage.getItem("presLastDate");
+  if(lastDate){
+    dateIn.value=lastDate;
+  } else {
+    dateIn.valueAsDate=new Date();
+  }
+  // Salva la data selezionata ogni volta che cambia
+  dateIn.addEventListener("change", ()=>{
+    sessionStorage.setItem("presLastDate", dateIn.value);
+    render();
+    updateDailyStats(dateIn.value);
+  });
+
+  render();
+}
+</script>
+</body>
+</html>
