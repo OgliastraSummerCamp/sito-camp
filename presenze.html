@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Presenze</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #f2f2f2;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, select {
+      display: block;
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    input[type="submit"] {
+      background-color: #28a745;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    input[type="submit"]:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+<h2 style="text-align:center;">Presenze</h2>
+
+<form id="form">
+  
+  <input type="hidden" name="foglio" value="Presenze">
+  <input name="nome" placeholder="Nome Bambino" required>
+  <input name="giorno" type="date" required>
+  <select name="presenza">
+    <option value="Presente">Presente</option>
+    <option value="Assente">Assente</option>
+  </select>
+
+  <input type="submit" value="Invia">
+</form>
+
+<script>
+document.getElementById("form").addEventListener("submit", function(e){
+  e.preventDefault();
+  const data = new FormData(this);
+  fetch("https://script.google.com/macros/s/AKfycbxAsYiISX68SNLff-74vDfzP3BjfHNqDu6TZeONrv6HsFccWA9HM0hWqSrxYTsIDV-KIA/exec", {
+    method: "POST",
+    body: data
+  })
+  .then(res => res.text())
+  .then(txt => {
+    alert("Dati inviati correttamente!");
+    this.reset();
+  })
+  .catch(err => alert("Errore: " + err));
+});
+</script>
+
+</body>
+</html>
