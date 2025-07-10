@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Iscritti - Area Staff</title>
+  <style>
+    body{margin:0;font-family:"Segoe UI",sans-serif;background:#fceabb;min-height:100vh;padding:0 20px;}
+    .navbar{width:100%;background:#ffffffaa;backdrop-filter:blur(6px);display:flex;gap:20px;align-items:center;padding:10px 20px;box-shadow:0 2px 6px rgba(0,0,0,0.1);position:fixed;top:0;left:0;}
+    .navbar a,.navbar button{ text-decoration:none;color:#0077cc;background:none;border:none;font-size:15px;cursor:pointer;padding:8px 10px;border-radius:6px;transition:background .2s;}
+    .navbar a:hover,.navbar button:hover{background:#0077cc;color:#fff;}
+    .logo{font-weight:600;color:#333;font-size:18px;margin-right:auto;}
+    h1{margin-top:120px;text-align:center;}
+    form{max-width:1000px;margin:20px auto;background:#fff9c4;padding:20px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.1);display:grid;grid-template-columns:1fr 1fr;column-gap:24px;row-gap:12px;}
+    fieldset{border:none;}
+    legend{font-weight:600;margin-bottom:4px;font-size:17px;}
+    label{display:block;margin-bottom:4px;font-size:14px;}
+    input,select{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;}
+    button.submit{grid-column:1/-1;margin-top:10px;padding:10px 18px;background:#0077cc;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;}
+    button.submit:hover{background:#005fa3;}
+    table{width:95%;max-width:1000px;margin:30px auto;border-collapse:collapse;}
+    th,td{border:1px solid #ccc;padding:6px 8px;}
+    th{background:#fff9c4;text-align:left;}
+    tr:hover{background:#fffde7;cursor:pointer;}
+    .btn-edit{background:#ff9800;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;}
+    .btn-edit:hover{background:#ef6c00;}
+    /* Modal */
+    #overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:999;}
+    #modal{background:#fff;padding:20px;border-radius:10px;max-width:500px;width:90%;max-height:80vh;overflow:auto;position:relative;}
+    #closeModal{position:absolute;top:8px;right:12px;border:none;background:none;font-size:20px;cursor:pointer;}
+  </style>
+</head>
+<body onload="init()">
+  <nav class="navbar">
+    <span class="logo">Ogliastra Summer Camp - Staff</span>
+    <a href="staff-dashboard.html">Home</a>
+    <a href="staff-iscritti.html">Iscritti</a>
+    <a href="staff-presenze.html">Presenze</a>
+    <a href="staff-pagamenti.html">Pagamenti</a>
+<a href="camp-spese.html">Spese</a>
+<a href="totali-camp.html">TOTALI</a>
+
+    <button onclick="logout()">Logout</button>
+  </nav>
+  <h1>Gestione Iscritti</h1>
+  <form id="regForm">
+    <input type="hidden" name="id">
+    <fieldset>
+    <legend>Bambino</legend>
+    <label>Cognome e Nome<input name="bambino_nome"></label>
+    <label>Luogo di Nascita<input name="bambino_luogo_nascita"></label>
+    <label>Data di Nascita<input type="date" name="bambino_data_nascita"></label>
+    <label>Codice Fiscale<input name="bambino_cf"></label>
+    <label>Intolleranze / Allergie<input name="intolleranze"></label>
+    <label>Terapie in Corso<input name="terapie"></label>
+    <label>Autorizzazione Foto<select name="privacy_foto"><option value="si">Sì</option><option value="no">No</option></select></label>
+    </fieldset>
+    <fieldset>
+    <legend>Genitore</legend>
+    <label>Cognome e Nome<input name="genitore_nome"></label>
+    <label>Luogo di Nascita<input name="genitore_luogo_nascita"></label>
+    <label>Data di Nascita<input type="date" name="genitore_data_nascita"></label>
+    <label>Codice Fiscale<input name="genitore_cf"></label>
+    <label>Residenza<input name="genitore_res"></label>
+    <label>Email<input type="email" name="email"></label>
+    <label>Telefono<input name="telefono"></label>
+    </fieldset>
+    <button type="submit" class="submit">Salva iscrizione</button>
+  </form>
+  <table id="tabIscritti">
+    <thead><tr><th id="thName" style="cursor:pointer;">Nome Bambino ▲</th><th>Genitore</th><th>Telefono</th><th>Azioni</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div id="overlay" onclick="closeModal(event)">
+    <div id="modal">
+      <button id="closeModal" onclick="closeModal(event)">&times;</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+<script>
+/* Sessione */
+function logout(){sessionStorage.removeItem('loggedStaff');location.href='login-staff.html';}
+function checkSession(){if(!sessionStorage.getItem('loggedStaff')) location='login-staff.html';}
+
+/* Storage utilities */
+const key='campIscritti';
+const uid=()=> 'id_'+Date.now();
+const getList=()=> JSON.parse(localStorage.getItem(key)||'[]');
+const saveList=l=> localStorage.setItem(key,JSON.stringify(l));
+
+let editing=null;
+let sortDir=1;
+
+function displayNameSort(o){
+  return (o.bambino_nome||'').toLowerCase().trim();
+}
+
+function render(){
+  const tbody=document.querySelector('#tabIscritti tbody');tbody.innerHTML='';
+  getList().slice().sort((a,b)=> sortDir*displayNameSort(a).localeCompare(displayNameSort(b),"it",{sensitivity:"base"})).forEach((o,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+<td>${o.bambino_nome||''}</td>
+<td>${o.genitore_nome||''}</td>
+<td>${o.telefono||''}</td>
+<td>
+  <button class="btn-edit" data-id="${o.id}" onclick="event.stopPropagation();loadEditById('${o.id}');">✏️ Modifica</button>
+  <button class="btn-delete" data-id="${o.id}" onclick="event.stopPropagation();deleteIscrittoById('${o.id}');">🗑️ Elimina</button>
+</td>
+`;
+    tr.addEventListener('click',e=>{if(!e.target.classList.contains('btn-edit')) show(o);});
+    tbody.appendChild(tr);
+  });
+}
+function show(o){
+  const mb=document.getElementById('modalBody');
+  mb.innerHTML=`<h3>${o.bambino_nome||''}</h3>
+  <p><strong>Genitore:</strong> ${o.genitore_nome||''}</p>
+  <p><strong>Telefono:</strong> ${o.telefono||''}</p>
+  <p><strong>Email:</strong> ${o.email||''}</p>
+  <p><strong>Intolleranze:</strong> ${o.intolleranze||'-'}</p>`;
+  document.getElementById('overlay').style.display='flex';
+}
+function closeModal(e){if(e.target.id==='overlay'||e.target.id==='closeModal'){document.getElementById('overlay').style.display='none';}}
+
+function loadEdit(i){
+  editing=i;
+  const o=getList()[i];
+  const f=document.forms['regForm'];
+  Object.entries(o).forEach(([k,v])=>{if(f.elements[k]) f.elements[k].value=v;});
+
+function deleteIscritto(i){
+  if(confirm('Vuoi davvero eliminare questo iscritto?')){
+    const list=getList();
+    list.splice(i,1);
+    saveList(list);
+    render();
+  }
+}
+  window.scrollTo({top:f.offsetTop-60,behavior:'smooth'});
+}
+
+document.forms['regForm'].addEventListener('submit',e=>{
+  e.preventDefault();
+  const f=e.target;const data=Object.fromEntries(new FormData(f).entries());
+  const list=getList();
+  if(editing!==null){ data.id=list[editing].id; list[editing]=data; editing=null;}
+  else{ data.id=uid(); list.push(data);}
+  saveList(list); f.reset(); render();
+});
+
+function init(){
+  checkSession(); document.getElementById("thName").onclick = ()=>{
+  sortDir*=-1;
+  document.getElementById("thName").textContent = "Nome Bambino" + (sortDir===1?" ▲":" ▼");
+  render();
+};
+  render();
+  document.getElementById('tabIscritti').addEventListener('click',e=>{
+    if(e.target.classList.contains('btn-edit')){e.stopPropagation();loadEdit(parseInt(e.target.dataset.i));}
+  });
+}
+
+
+// --- Delete function (global) ---
+function deleteIscritto(i){
+  if(confirm('Vuoi davvero eliminare questo iscritto?')){
+    const list = getList();
+    list.splice(i,1);
+    saveList(list);
+    render();
+  }
+}
+
+
+// --- nuove funzioni id-safe ---
+function loadEditById(id){
+  const list = getList();
+  const idx = list.findIndex(x => x.id === id);
+  if(idx === -1) return;
+  editing = idx;
+  const o = list[idx];
+  const f = document.forms['regForm'];
+  Object.entries(o).forEach(([k,v])=>{ if(f.elements[k]) f.elements[k].value = v; });
+  window.scrollTo({top: f.offsetTop - 60, behavior: 'smooth'});
+}
+
+function deleteIscrittoById(id){
+  if(confirm('Vuoi davvero eliminare questo iscritto?')){
+    const list = getList().filter(x => x.id !== id);
+    saveList(list);
+    render();
+  }
+}
+
+</script>
+</body>
+</html>

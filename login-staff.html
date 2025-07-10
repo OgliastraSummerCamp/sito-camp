@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login Staff - Ogliastra Summer Camp</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(145deg, #fceabb, #f8b500);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+    }
+    h1 {margin-bottom: 24px;}
+    input {
+      width: 240px;
+      padding: 10px;
+      margin: 6px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    button {
+      width: 240px;
+      padding: 12px;
+      margin-top: 12px;
+      background:#0077cc;
+      color:#fff;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      transition: background 0.3s;
+      font-size: 16px;
+    }
+    button:hover{background:#005fa3;}
+    a.back {
+      margin-top: 20px;
+      color:#0077cc;
+      text-decoration:none;
+      font-size: 14px;
+    }
+    #error {
+      color:#c62828;
+      margin-top:10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Login Staff</h1>
+  <form id="loginForm">
+    <input id="user" type="text" placeholder="Username" required><br>
+    <input id="pass" type="password" placeholder="Password" required><br>
+    <button type="submit">Entra</button>
+    <p id="error"></p>
+  </form>
+  <a href="index.html" class="back">← Torna alla Home</a>
+
+<script>
+// Lista semplificata di utenti (da sostituire con metodo di autenticazione reale)
+const staffUsers = [
+  { username: "claudio",  password: "camp2025" },
+  { username: "federica", password: "ludo2025" },
+  { username: "admin",    password: "admin"    }
+];
+
+// Intercetta submit del form
+document.getElementById("loginForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const username = document.getElementById("user").value.trim();
+  const password = document.getElementById("pass").value.trim();
+
+  const found = staffUsers.find(u => u.username === username && u.password === password);
+
+  if (found) {
+    // Salva sessione e reindirizza
+    sessionStorage.setItem("loggedStaff", username);
+    window.location.href = "staff-dashboard.html";
+  } else {
+    // Mostra errore
+    document.getElementById("error").textContent = "Credenziali non valide, riprova.";
+  }
+});
+</script>
+</body>
+</html>
