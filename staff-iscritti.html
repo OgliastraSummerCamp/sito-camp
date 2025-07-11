@@ -19,16 +19,6 @@
     input,select{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;}
     button.submit{grid-column:1/-1;margin-top:10px;padding:10px 18px;background:#0077cc;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;}
     button.submit:hover{background:#005fa3;}
-    table{width:95%;max-width:1000px;margin:30px auto;border-collapse:collapse;}
-    th,td{border:1px solid #ccc;padding:6px 8px;}
-    th{background:#fff9c4;text-align:left;}
-    tr:hover{background:#fffde7;cursor:pointer;}
-    .btn-edit{background:#ff9800;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;}
-    .btn-edit:hover{background:#ef6c00;}
-    /* Modal */
-    #overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:999;}
-    #modal{background:#fff;padding:20px;border-radius:10px;max-width:500px;width:90%;max-height:80vh;overflow:auto;position:relative;}
-    #closeModal{position:absolute;top:8px;right:12px;border:none;background:none;font-size:20px;cursor:pointer;}
   </style>
 </head>
 <body onload="init()">
@@ -38,15 +28,12 @@
     <a href="staff-iscritti.html">Iscritti</a>
     <a href="staff-presenze.html">Presenze</a>
     <a href="staff-pagamenti.html">Pagamenti</a>
-<a href="camp-spese.html">Spese</a>
-<a href="totali-camp.html">TOTALI</a>
-
+    <a href="camp-spese.html">Spese</a>
+    <a href="totali-camp.html">TOTALI</a>
     <button onclick="logout()">Logout</button>
   </nav>
   <h1>Gestione Iscritti</h1>
-<form id="regForm" onsubmit="salvaIscrizioneStaff(event)">
-
-    <input type="hidden" name="id">
+  <form id="regForm" onsubmit="salvaIscrizioneStaff(event)">
     <fieldset>
     <legend>Bambino</legend>
     <label>Cognome e Nome<input name="bambino_nome"></label>
@@ -69,178 +56,20 @@
     </fieldset>
     <button type="submit" class="submit">Salva iscrizione</button>
   </form>
-  <table id="tabIscritti">
-    <thead><tr><th id="thName" style="cursor:pointer;">Nome Bambino ▲</th><th>Genitore</th><th>Telefono</th><th>Azioni</th></tr></thead>
-    <tbody></tbody>
-  </table>
-  <div id="overlay" onclick="closeModal(event)">
-    <div id="modal">
-      <button id="closeModal" onclick="closeModal(event)">&times;</button>
-      <div id="modalBody"></div>
-    </div>
-  </div>
 <script>
-/* Sessione */
-function logout(){sessionStorage.removeItem('loggedStaff');location.href='login-staff.html';}
-function checkSession(){if(!sessionStorage.getItem('loggedStaff')) location='login-staff.html';}
-
-/* Storage utilities */
-const key='campIscritti';
-const uid=()=> 'id_'+Date.now();
-const getList=()=> JSON.parse(localStorage.getItem(key)||'[]');
-const saveList=l=> localStorage.setItem(key,JSON.stringify(l));
-
-let editing=null;
-let sortDir=1;
-
-function displayNameSort(o){
-  return (o.bambino_nome||'').toLowerCase().trim();
-}
-
-function render(){
-  const tbody=document.querySelector('#tabIscritti tbody');tbody.innerHTML='';
-  getList().slice().sort((a,b)=> sortDir*displayNameSort(a).localeCompare(displayNameSort(b),"it",{sensitivity:"base"})).forEach((o,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML = `
-<td>${o.bambino_nome||''}</td>
-<td>${o.genitore_nome||''}</td>
-<td>${o.telefono||''}</td>
-<td>
-  <button class="btn-edit" data-id="${o.id}" onclick="event.stopPropagation();loadEditById('${o.id}');">✏️ Modifica</button>
-  <button class="btn-delete" data-id="${o.id}" onclick="event.stopPropagation();deleteIscrittoById('${o.id}');">🗑️ Elimina</button>
-</td>
-`;
-    tr.addEventListener('click',e=>{if(!e.target.classList.contains('btn-edit')) show(o);});
-    tbody.appendChild(tr);
-  });
-}
-function show(o){
-  const mb=document.getElementById('modalBody');
-  mb.innerHTML=`<h3>${o.bambino_nome||''}</h3>
-  <p><strong>Genitore:</strong> ${o.genitore_nome||''}</p>
-  <p><strong>Telefono:</strong> ${o.telefono||''}</p>
-  <p><strong>Email:</strong> ${o.email||''}</p>
-  <p><strong>Intolleranze:</strong> ${o.intolleranze||'-'}</p>`;
-  document.getElementById('overlay').style.display='flex';
-}
-function closeModal(e){if(e.target.id==='overlay'||e.target.id==='closeModal'){document.getElementById('overlay').style.display='none';}}
-
-function loadEdit(i){
-  editing=i;
-  const o=getList()[i];
-  const f=document.forms['regForm'];
-  Object.entries(o).forEach(([k,v])=>{if(f.elements[k]) f.elements[k].value=v;});
-
-function deleteIscritto(i){
-  if(confirm('Vuoi davvero eliminare questo iscritto?')){
-    const list=getList();
-    list.splice(i,1);
-    saveList(list);
-    render();
-  }
-}
-  window.scrollTo({top:f.offsetTop-60,behavior:'smooth'});
-}
-
-document.forms['regForm'].addEventListener('submit',e=>{
-  e.preventDefault();
-  const f=e.target;const data=Object.fromEntries(new FormData(f).entries());
-  const list=getList();
-  if(editing!==null){ data.id=list[editing].id; list[editing]=data; editing=null;}
-  else{ data.id=uid(); list.push(data);}
-  saveList(list); f.reset(); render();
-});
-
-function init(){
-  checkSession(); document.getElementById("thName").onclick = ()=>{
-  sortDir*=-1;
-  document.getElementById("thName").textContent = "Nome Bambino" + (sortDir===1?" ▲":" ▼");
-  render();
-};
-  render();
-  document.getElementById('tabIscritti').addEventListener('click',e=>{
-    if(e.target.classList.contains('btn-edit')){e.stopPropagation();loadEdit(parseInt(e.target.dataset.i));}
-  });
-}
-
-
-// --- Delete function (global) ---
-function deleteIscritto(i){
-  if(confirm('Vuoi davvero eliminare questo iscritto?')){
-    const list = getList();
-    list.splice(i,1);
-    saveList(list);
-    render();
-  }
-}
-
-
-// --- nuove funzioni id-safe ---
-function loadEditById(id){
-  const list = getList();
-  const idx = list.findIndex(x => x.id === id);
-  if(idx === -1) return;
-  editing = idx;
-  const o = list[idx];
-  const f = document.forms['regForm'];
-  Object.entries(o).forEach(([k,v])=>{ if(f.elements[k]) f.elements[k].value = v; });
-  window.scrollTo({top: f.offsetTop - 60, behavior: 'smooth'});
-}
-
-function deleteIscrittoById(id){
-  if(confirm('Vuoi davvero eliminare questo iscritto?')){
-    const list = getList().filter(x => x.id !== id);
-    saveList(list);
-    render();
-  }
-}
 function salvaIscrizioneStaff(event) {
-  event.preventDefault(); // blocca invio automatico
-
-  const url = "https://script.google.com/macros/s/AKfycbywt1yZ_4aEbsRBHPeyyuAKfdtCDIlRAJ-7oH-Xg0GseKcJTvGNxzq2KlkYNF37Pz2i/exec";  // ← incolla qui il tuo URL
-
+  event.preventDefault();
+  const url = "https://script.google.com/macros/s/AKfycbywt1yZ_4aEbsRBHPeyyuAKfdtCDIlRAJ-7oH-Xg0GseKcJTvGNxzq2KlkYNF37Pz2i/exec";
   const dati = new URLSearchParams();
+  const f = document.forms['regForm'];
   dati.append("foglio", "Iscrizioni_Staff");
-
-  dati.append("nomeBambino", document.getElementsByName("bambino_nome")[0].value);
-  dati.append("luogoNascitaB", document.getElementsByName("bambino_luogo_nascita")[0].value);
-  dati.append("dataNascitaB", document.getElementsByName("bambino_data_nascita")[0].value);
-  dati.append("cfBambino", document.getElementsByName("bambino_cf")[0].value);
-  dati.append("allergie", document.getElementsByName("intolleranze")[0].value);
-  dati.append("terapie", document.getElementsByName("terapie")[0].value);
-  dati.append("autorizzazione", document.getElementsByName("privacy_foto")[0].value);
-
-  dati.append("nomeGenitore", document.getElementsByName("genitore_nome")[0].value);
-  dati.append("luogoNascitaG", document.getElementsByName("genitore_luogo_nascita")[0].value);
-  dati.append("dataNascitaG", document.getElementsByName("genitore_data_nascita")[0].value);
-  dati.append("cfGenitore", document.getElementsByName("genitore_cf")[0].value);
-  dati.append("residenza", document.getElementsByName("genitore_res")[0].value);
-  dati.append("email", document.getElementsByName("email")[0].value);
-  dati.append("telefono", document.getElementsByName("telefono")[0].value);
-
-  fetch(url, {
-    method: "POST",
-    body: dati
-  })
-  .then(res => res.text())
-  .then(risposta => {
-    alert("Risposta: " + risposta);
-    document.getElementById("regForm").reset(); // pulisce il form
-  });
+  [...f.elements].forEach(input => { if(input.name) dati.append(input.name, input.value); });
+  fetch(url, { method: "POST", body: dati })
+    .then(res => res.text())
+    .then(risposta => { alert("Risposta: " + risposta); f.reset(); });
 }
-
-
-  fetch(url, {
-    method: "POST",
-    body: dati
-  })
-  .then(res => res.text())
-  .then(risposta => {
-    alert("Risposta dal server: " + risposta);
-    document.getElementById("form-iscrizione").reset();
-  });
-}
-
+function init() {}
+function logout() {}
 </script>
 </body>
 </html>
