@@ -194,14 +194,27 @@ function deleteIscrittoById(id){
   }
 }
 
-</script>
-
 <script>
 document.forms['regForm'].addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target;
-  const data = new FormData(f);
+  const data = new FormData();
+
   data.append("foglio", "Iscrizioni_Staff");
+  data.append("bambino_nome", f.bambino_nome.value);
+  data.append("bambino_luogo_nascita", f.bambino_luogo_nascita.value);
+  data.append("bambino_data_nascita", f.bambino_data_nascita.value);
+  data.append("bambino_cf", f.bambino_cf.value);
+  data.append("intolleranze", f.intolleranze.value);
+  data.append("terapie", f.terapie.value);
+  data.append("privacy_foto", f.privacy_foto.value);
+  data.append("genitore_nome", f.genitore_nome.value);
+  data.append("genitore_luogo_nascita", f.genitore_luogo_nascita.value);
+  data.append("genitore_data_nascita", f.genitore_data_nascita.value);
+  data.append("genitore_cf", f.genitore_cf.value);
+  data.append("genitore_res", f.genitore_res.value);
+  data.append("email", f.email.value);
+  data.append("telefono", f.telefono.value);
 
   await fetch("https://script.google.com/macros/s/AKfycbyX9pB4Z-z5N7ElRCLFZnQuB30nrrReLjwcnXOvZnuxccOAgN5ZURK4tnKr56hn9iKbXQ/exec", {
     method: "POST",
@@ -212,6 +225,7 @@ document.forms['regForm'].addEventListener('submit', async e => {
   f.reset();
 });
 </script>
+
 
 </body>
 </html>
