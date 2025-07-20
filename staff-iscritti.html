@@ -39,16 +39,32 @@ const saveList = l => localStorage.setItem(key, JSON.stringify(l));
 const uid = () => 'id_' + Date.now();
     let sortDir = 1;
 
-    async function fetchFromSupabase() {
-      const { data, error } = await supabase.from('iscritti').select('*').order('data', { ascending: false });
-      if (error) {
-        console.error('Errore Supabase:', error.message);
-        alert('Errore nel caricamento dati da Supabase.');
-        return;
-      }
-      saveList(data);
-      render();
-    }
+   let iscritti = [];
+
+async function fetchFromSupabase() {
+  const { data, error } = await supabase.from('iscritti').select('*').order('created_at', { ascending: false });
+  if (error) {
+    alert('Errore nel caricamento da Supabase');
+    console.error(error);
+    return;
+  }
+  iscritti = data;
+  render();
+}
+
+function render() {
+  const tbody = document.querySelector('#tabIscritti tbody');
+  tbody.innerHTML = '';
+  iscritti
+    .slice()
+    .sort((a, b) => sortDir * a.bambino_nome.localeCompare(b.bambino_nome))
+    .forEach(o => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${o.bambino_nome}</td><td>${o.genitore_nome}</td><td>${o.telefono}</td>`;
+      tbody.appendChild(tr);
+    });
+}
+
 
     document.addEventListener('DOMContentLoaded', () => {
       document.forms['regForm'].addEventListener('submit', async e => {
