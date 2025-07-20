@@ -202,27 +202,6 @@ Men Sana in Corpore Sano A.S.D.<br>
   <div class='row' style='margin-top:8px;'>IMPORTO CORRISPOSTO € <span class='line'>${o.importo.toFixed(2)}</span></div>
   <div class='sec'>PAGAMENTO DEL <span class='line'>${o.data_pag}</span> TRAMITE ${o.metodo}</div>
   <p class='footer'>IL PRESIDENTE<div class='sig'></div></p>
-
-<script>
-document.getElementById('payForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const data = new FormData();
-  data.append("foglio", "Pagamenti");
-  data.append("nome", document.getElementById("childSel").selectedOptions[0].text);
-  data.append("importo", document.getElementById("payAmount").value);
-  data.append("metodo", document.getElementById("payMethod").value);
-  data.append("data", document.getElementById("payDate").value);
-
-  await fetch("https://script.google.com/macros/s/AKfycbyX9pB4Z-z5N7ElRCLFZnQuB30nrrReLjwcnXOvZnuxccOAgN5ZURK4tnKr56hn9iKbXQ/exec", {
-    method: "POST",
-    body: data
-  });
-
-  alert("Pagamento registrato su Google Sheets!");
-  document.getElementById('payForm').reset();
-});
-</script>
-
 </body></html>`;
 }
 
@@ -242,28 +221,7 @@ function receiptHTMLBasic(o){
     <p><strong>Importo corrisposto:</strong> € ${o.importo.toFixed(2)}</p>
     <p><strong>Metodo:</strong> ${o.metodo}</p>
     <p style="margin-top:50px;">Firma __________________________</p>
-  
-<script>
-document.getElementById('payForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const data = new FormData();
-  data.append("foglio", "Pagamenti");
-  data.append("nome", document.getElementById("childSel").selectedOptions[0].text);
-  data.append("importo", document.getElementById("payAmount").value);
-  data.append("metodo", document.getElementById("payMethod").value);
-  data.append("data", document.getElementById("payDate").value);
-
-  await fetch("https://script.google.com/macros/s/AKfycbyX9pB4Z-z5N7ElRCLFZnQuB30nrrReLjwcnXOvZnuxccOAgN5ZURK4tnKr56hn9iKbXQ/exec", {
-    method: "POST",
-    body: data
-  });
-
-  alert("Pagamento registrato su Google Sheets!");
-  document.getElementById('payForm').reset();
-});
-</script>
-
-</body></html>`;
+  </body></html>`;
 }
 
 
@@ -325,26 +283,5 @@ function init(){
   renderTable();renderSummary();
 }
 </script>
-
-<script>
-document.getElementById('payForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const data = new FormData();
-  data.append("foglio", "Pagamenti");
-  data.append("nome", document.getElementById("childSel").selectedOptions[0].text);
-  data.append("importo", document.getElementById("payAmount").value);
-  data.append("metodo", document.getElementById("payMethod").value);
-  data.append("data", document.getElementById("payDate").value);
-
-  await fetch("https://script.google.com/macros/s/AKfycbyX9pB4Z-z5N7ElRCLFZnQuB30nrrReLjwcnXOvZnuxccOAgN5ZURK4tnKr56hn9iKbXQ/exec", {
-    method: "POST",
-    body: data
-  });
-
-  alert("Pagamento registrato su Google Sheets!");
-  document.getElementById('payForm').reset();
-});
-</script>
-
 </body>
 </html>
