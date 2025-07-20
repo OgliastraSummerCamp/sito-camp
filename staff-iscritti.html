@@ -208,6 +208,40 @@ function init(){
   });
 }
 
+<script>
+async function fetchFromSupabase(){
+  const { data, error } = await supabase
+    .from('iscritti')
+    .select('*')
+    .order('data', { ascending: false });
+
+  if (error) {
+    console.error('Errore nel caricamento:', error.message);
+    alert('Errore nel caricamento dati da Supabase.');
+    return;
+  }
+
+  // Salva localmente (opzionale)
+  saveList(data);
+  render();
+}
+
+function init() {
+  checkSession();
+  fetchFromSupabase();  // 👈 aggiunto qui
+  document.getElementById("thName").onclick = () => {
+    sortDir *= -1;
+    document.getElementById("thName").textContent = "Nome Bambino" + (sortDir === 1 ? " ▲" : " ▼");
+    render();
+  };
+  document.getElementById('tabIscritti').addEventListener('click', e => {
+    if (e.target.classList.contains('btn-edit')) {
+      e.stopPropagation();
+      loadEdit(parseInt(e.target.dataset.i));
+    }
+  });
+}
+</script>
 
 // --- Delete function (global) ---
 function deleteIscritto(i){
