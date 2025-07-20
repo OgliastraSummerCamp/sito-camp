@@ -78,63 +78,86 @@
     </div>
   </div>
   <script>
+    
+    /* Sessione AGGIUNTO */
+function logout(){sessionStorage.removeItem('loggedStaff');location.href='login-staff.html';}
+function checkSession(){if(!sessionStorage.getItem('loggedStaff')) location='login-staff.html';}
+
+/* Storage utilities */
   const key = 'campIscritti';
   const uid = () => 'id_' + Date.now();
   const getList = () => JSON.parse(localStorage.getItem(key) || '[]');
   const saveList = l => localStorage.setItem(key, JSON.stringify(l));
   let editing = null;
 
-  function render() {
-    console.log("Render chiamato");
-  }
-
-  document.forms['regForm'].addEventListener('submit', async e => {
-    e.preventDefault();
-    const f = e.target;
-    const data = Object.fromEntries(new FormData(f).entries());
-    const list = getList();
-
-    if (editing !== null) {
-      data.id = list[editing].id;
-      list[editing] = data;
-      editing = null;
-    } else {
-      data.id = uid();
-      list.push(data);
-    }
-
-    // Salva in localStorage
-    saveList(list);
-
-    // Invia a Google Sheets
-    const toSend = new FormData();
-    toSend.append("foglio", "Iscrizioni_Staff");
-    toSend.append("bambino_nome", data.bambino_nome);
-    toSend.append("bambino_luogo_nascita", data.bambino_luogo_nascita);
-    toSend.append("bambino_data_nascita", data.bambino_data_nascita);
-    toSend.append("bambino_cf", data.bambino_cf);
-    toSend.append("intolleranze", data.intolleranze);
-    toSend.append("terapie", data.terapie);
-    toSend.append("privacy_foto", data.privacy_foto);
-    toSend.append("genitore_nome", data.genitore_nome);
-    toSend.append("genitore_luogo_nascita", data.genitore_luogo_nascita);
-    toSend.append("genitore_data_nascita", data.genitore_data_nascita);
-    toSend.append("genitore_cf", data.genitore_cf);
-    toSend.append("genitore_res", data.genitore_res);
-    toSend.append("email", data.email);
-    toSend.append("telefono", data.telefono);
-
-    await fetch("https://script.google.com/macros/s/AKfycbyX9pB4Z-z5N7ElRCLFZnQuB30nrrReLjwcnXOvZnuxccOAgN5ZURK4tnKr56hn9iKbXQ/exec", {
-      method: "POST",
-      body: toSend
-    });
-
-    alert("Iscrizione salvata!");
-    f.reset();
-    render();
+ function render(){
+  const tbody=document.querySelector('#tabIscritti tbody');tbody.innerHTML='';
+  getList().slice().sort((a,b)=> sortDir*displayNameSort(a).localeCompare(displayNameSort(b),"it",{sensitivity:"base"})).forEach((o,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+<td>${o.bambino_nome||''}</td>
+<td>${o.genitore_nome||''}</td>
+<td>${o.telefono||''}</td>
+<td>
+  <button class="btn-edit" data-id="${o.id}" onclick="event.stopPropagation();loadEditById('${o.id}');">✏️ Modifica</button>
+  <button class="btn-delete" data-id="${o.id}" onclick="event.stopPropagation();deleteIscrittoById('${o.id}');">🗑️ Elimina</button>
+</td>
+`;
+    tr.addEventListener('click',e=>{if(!e.target.classList.contains('btn-edit')) show(o);});
+    tbody.appendChild(tr);
   });
-  
-  // --- Delete function (global) ---
+}
+function show(o){
+  const mb=document.getElementById('modalBody');
+  mb.innerHTML=`<h3>${o.bambino_nome||''}</h3>
+  <p><strong>Genitore:</strong> ${o.genitore_nome||''}</p>
+  <p><strong>Telefono:</strong> ${o.telefono||''}</p>
+  <p><strong>Email:</strong> ${o.email||''}</p>
+  <p><strong>Intolleranze:</strong> ${o.intolleranze||'-'}</p>`;
+  document.getElementById('overlay').style.display='flex';
+}
+function closeModal(e){if(e.target.id==='overlay'||e.target.id==='closeModal'){document.getElementById('overlay').style.display='none';}}
+
+function loadEdit(i){
+  editing=i;
+  const o=getList()[i];
+  const f=document.forms['regForm'];
+  Object.entries(o).forEach(([k,v])=>{if(f.elements[k]) f.elements[k].value=v;});
+
+function deleteIscritto(i){
+  if(confirm('Vuoi davvero eliminare questo iscritto?')){
+    const list=getList();
+    list.splice(i,1);
+    saveList(list);
+    render();
+  }
+}
+  window.scrollTo({top:f.offsetTop-60,behavior:'smooth'});
+}
+
+document.forms['regForm'].addEventListener('submit',e=>{
+  e.preventDefault();
+  const f=e.target;const data=Object.fromEntries(new FormData(f).entries());
+  const list=getList();
+  if(editing!==null){ data.id=list[editing].id; list[editing]=data; editing=null;}
+  else{ data.id=uid(); list.push(data);}
+  saveList(list); f.reset(); render();
+});
+
+function init(){
+  checkSession(); document.getElementById("thName").onclick = ()=>{
+  sortDir*=-1;
+  document.getElementById("thName").textContent = "Nome Bambino" + (sortDir===1?" ▲":" ▼");
+  render();
+};
+  render();
+  document.getElementById('tabIscritti').addEventListener('click',e=>{
+    if(e.target.classList.contains('btn-edit')){e.stopPropagation();loadEdit(parseInt(e.target.dataset.i));}
+  });
+}
+
+
+// --- Delete function (global) ---
 function deleteIscritto(i){
   if(confirm('Vuoi davvero eliminare questo iscritto?')){
     const list = getList();
@@ -156,14 +179,15 @@ function loadEditById(id){
   Object.entries(o).forEach(([k,v])=>{ if(f.elements[k]) f.elements[k].value = v; });
   window.scrollTo({top: f.offsetTop - 60, behavior: 'smooth'});
 }
-    function deleteIscrittoById(id){
+
+function deleteIscrittoById(id){
   if(confirm('Vuoi davvero eliminare questo iscritto?')){
     const list = getList().filter(x => x.id !== id);
     saveList(list);
     render();
   }
 }
-  
-  </script>
+
+</script>
 </body>
 </html>
