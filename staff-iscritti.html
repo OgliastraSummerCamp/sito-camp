@@ -1,120 +1,57 @@
 
 <!DOCTYPE html>
-
 <html lang="it">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Iscritti - Area Staff</title>
-<style>
-    body{margin:0;font-family:"Segoe UI",sans-serif;background:#fceabb;min-height:100vh;padding:0 20px;}
-    .navbar{width:100%;background:#ffffffaa;backdrop-filter:blur(6px);display:flex;gap:20px;align-items:center;padding:10px 20px;box-shadow:0 2px 6px rgba(0,0,0,0.1);position:fixed;top:0;left:0;}
-    .navbar a,.navbar button{ text-decoration:none;color:#0077cc;background:none;border:none;font-size:15px;cursor:pointer;padding:8px 10px;border-radius:6px;transition:background .2s;}
-    .navbar a:hover,.navbar button:hover{background:#0077cc;color:#fff;}
-    .logo{font-weight:600;color:#333;font-size:18px;margin-right:auto;}
-    h1{margin-top:120px;text-align:center;}
-    form{max-width:1000px;margin:20px auto;background:#fff9c4;padding:20px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.1);display:grid;grid-template-columns:1fr 1fr;column-gap:24px;row-gap:12px;}
-    fieldset{border:none;}
-    legend{font-weight:600;margin-bottom:4px;font-size:17px;}
-    label{display:block;margin-bottom:4px;font-size:14px;}
-    input,select{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;}
-    button.submit{grid-column:1/-1;margin-top:10px;padding:10px 18px;background:#0077cc;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;}
-    button.submit:hover{background:#005fa3;}
-    table{width:95%;max-width:1000px;margin:30px auto;border-collapse:collapse;}
-    th,td{border:1px solid #ccc;padding:6px 8px;}
-    th{background:#fff9c4;text-align:left;}
-    tr:hover{background:#fffde7;cursor:pointer;}
-    .btn-edit{background:#ff9800;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;}
-    .btn-edit:hover{background:#ef6c00;}
-    /* Modal */
-    #overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:999;}
-    #modal{background:#fff;padding:20px;border-radius:10px;max-width:500px;width:90%;max-height:80vh;overflow:auto;position:relative;}
-    #closeModal{position:absolute;top:8px;right:12px;border:none;background:none;font-size:20px;cursor:pointer;}
-  </style>
+  <meta charset="UTF-8" />
+  <title>Iscrizioni Supabase</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
-<body onload="init()">
-<nav class="navbar">
-<span class="logo">Ogliastra Summer Camp - Staff</span>
-<a href="staff-dashboard.html">Home</a>
-<a href="staff-iscritti.html">Iscritti</a>
-<a href="staff-presenze.html">Presenze</a>
-<a href="staff-pagamenti.html">Pagamenti</a>
-<a href="camp-spese.html">Spese</a>
-<a href="totali-camp.html">TOTALI</a>
-<button onclick="logout()">Logout</button>
-</nav>
-<h1>Gestione Iscritti</h1>
-<form id="regForm">
-<input name="id" type="hidden"/>
-<fieldset>
-<legend>Bambino</legend>
-<label>Cognome e Nome<input name="bambino_nome"/></label>
-<label>Luogo di Nascita<input name="bambino_luogo_nascita"/></label>
-<label>Data di Nascita<input name="bambino_data_nascita" type="date"/></label>
-<label>Codice Fiscale<input name="bambino_cf"/></label>
-<label>Intolleranze / Allergie<input name="intolleranze"/></label>
-<label>Terapie in Corso<input name="terapie"/></label>
-<label>Autorizzazione Foto<select name="privacy_foto"><option value="si">Sì</option><option value="no">No</option></select></label>
-</fieldset>
-<fieldset>
-<legend>Genitore</legend>
-<label>Cognome e Nome<input name="genitore_nome"/></label>
-<label>Luogo di Nascita<input name="genitore_luogo_nascita"/></label>
-<label>Data di Nascita<input name="genitore_data_nascita" type="date"/></label>
-<label>Codice Fiscale<input name="genitore_cf"/></label>
-<label>Residenza<input name="genitore_res"/></label>
-<label>Email<input name="email" type="email"/></label>
-<label>Telefono<input name="telefono"/></label>
-</fieldset>
-<button class="submit" type="submit">Salva iscrizione</button>
-</form>
-<table id="tabIscritti">
-<thead><tr><th id="thName" style="cursor:pointer;">Nome Bambino ▲</th><th>Genitore</th><th>Telefono</th><th>Azioni</th></tr></thead>
-<tbody></tbody>
-</table>
-<div id="overlay" onclick="closeModal(event)">
-<div id="modal">
-<button id="closeModal" onclick="closeModal(event)">×</button>
-<div id="modalBody"></div>
-</div>
-</div>
+<body>
+  <h1>Iscrizione Camp - Supabase</h1>
+  <form id="regForm">
+    <input name="bambino_nome" placeholder="Nome Bambino" required><br>
+    <input name="genitore_nome" placeholder="Nome Genitore"><br>
+    <input name="telefono" placeholder="Telefono"><br>
+    <button type="submit">Salva</button>
+  </form>
+  <h2>Iscritti</h2>
+  <ul id="lista"></ul>
 
-<script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbyX9pB4Z-z5N7ElRCLFZnQuB30nrrReLjwcnXOvZnuxccOAgN5ZURK4tnKr56hn9iKbXQ/exec";
-const foglio = "Iscrizioni_Staff";
+  <script>
+    const supabase = supabase.createClient(
+      'https://hyiqvhdreuphntepjmfd.supabase.co',  // <-- DA MODIFICARE
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5aXF2aGRyZXVwaG50ZXBqbWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNDUwMzksImV4cCI6MjA2ODYyMTAzOX0.81oI7d7M8baIDYhsLMpqwrDGXkqF714k7bX73ZpQnsY'                 // <-- DA MODIFICARE
+    );
 
-document.addEventListener("DOMContentLoaded", async () => {
-  await caricaDati();
-  document.forms['regForm'].addEventListener('submit', salvaIscrizione);
-});
+    async function caricaIscritti() {
+      const { data, error } = await supabase.from('iscritti').select('*').order('data', { ascending: false });
+      const lista = document.getElementById("lista");
+      lista.innerHTML = "";
+      data.forEach(r => {
+        const li = document.createElement("li");
+        li.textContent = r.bambino_nome + " - " + (r.telefono || '');
+        lista.appendChild(li);
+      });
+    }
 
-async function caricaDati() {
-  const res = await fetch(`${scriptURL}?foglio=${foglio}`);
-  const dati = await res.json();
+    document.getElementById("regForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const f = e.target;
+      const nuovo = {
+        bambino_nome: f.bambino_nome.value,
+        genitore_nome: f.genitore_nome.value,
+        telefono: f.telefono.value,
+      };
+      const { error } = await supabase.from('iscritti').insert([nuovo]);
+      if (!error) {
+        f.reset();
+        caricaIscritti();
+      } else {
+        alert("Errore: " + error.message);
+      }
+    });
 
-  const tbody = document.querySelector('#tabIscritti tbody');
-  tbody.innerHTML = "";
-  dati.forEach(o => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${o.bambino_nome || ''}</td>
-      <td>${o.genitore_nome || ''}</td>
-      <td>${o.telefono || ''}</td>
-      <td></td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-async function salvaIscrizione(e) {
-  e.preventDefault();
-  const f = e.target;
-  const data = new FormData(f);
-  data.append("foglio", foglio);
-  await fetch(scriptURL, { method: "POST", body: data });
-  alert("Iscrizione salvata su Google Sheets!");
-  f.reset();
-  await caricaDati();
-}
-</script></body>
+    caricaIscritti();
+  </script>
+</body>
 </html>
