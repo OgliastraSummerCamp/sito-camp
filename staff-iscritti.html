@@ -1,14 +1,49 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Iscritti - Area Staff</title>
+  <style>
+    body{margin:0;font-family:"Segoe UI",sans-serif;background:#fceabb;min-height:100vh;padding:0 20px;}
+    .navbar{width:100%;background:#ffffffaa;backdrop-filter:blur(6px);display:flex;gap:20px;align-items:center;padding:10px 20px;box-shadow:0 2px 6px rgba(0,0,0,0.1);position:fixed;top:0;left:0;}
+    .navbar a,.navbar button{ text-decoration:none;color:#0077cc;background:none;border:none;font-size:15px;cursor:pointer;padding:8px 10px;border-radius:6px;transition:background .2s;}
+    .navbar a:hover,.navbar button:hover{background:#0077cc;color:#fff;}
+    .logo{font-weight:600;color:#333;font-size:18px;margin-right:auto;}
+    h1{margin-top:120px;text-align:center;}
+    form{max-width:1000px;margin:20px auto;background:#fff9c4;padding:20px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,0.1);display:grid;grid-template-columns:1fr 1fr;column-gap:24px;row-gap:12px;}
+    fieldset{border:none;}
+    legend{font-weight:600;margin-bottom:4px;font-size:17px;}
+    label{display:block;margin-bottom:4px;font-size:14px;}
+    input,select{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;}
+    button.submit{grid-column:1/-1;margin-top:10px;padding:10px 18px;background:#0077cc;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;}
+    button.submit:hover{background:#005fa3;}
+    table{width:95%;max-width:1000px;margin:30px auto;border-collapse:collapse;}
+    th,td{border:1px solid #ccc;padding:6px 8px;}
+    th{background:#fff9c4;text-align:left;}
+    tr:hover{background:#fffde7;cursor:pointer;}
+    .btn-edit{background:#ff9800;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;}
+    .btn-edit:hover{background:#ef6c00;}
+    /* Modal */
+    #overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;z-index:999;}
+    #modal{background:#fff;padding:20px;border-radius:10px;max-width:500px;width:90%;max-height:80vh;overflow:auto;position:relative;}
+    #closeModal{position:absolute;top:8px;right:12px;border:none;background:none;font-size:20px;cursor:pointer;}
+  </style>
 </head>
-<body>
+<body onload="init()">
+  <nav class="navbar">
+    <span class="logo">Ogliastra Summer Camp - Staff</span>
+    <a href="staff-dashboard.html">Home</a>
+    <a href="staff-iscritti.html">Iscritti</a>
+    <a href="staff-presenze.html">Presenze</a>
+    <a href="staff-pagamenti.html">Pagamenti</a>
+<a href="camp-spese.html">Spese</a>
+<a href="totali-camp.html">TOTALI</a>
+
+    <button onclick="logout()">Logout</button>
+  </nav>
   <h1>Gestione Iscritti</h1>
-  <form id="regForm" name="regForm">
+  <form id="regForm">
     <input type="hidden" name="id">
     <fieldset>
       <legend>Bambino</legend>
@@ -32,7 +67,16 @@
     </fieldset>
     <button type="submit">Salva iscrizione</button>
   </form>
-
+ <table id="tabIscritti">
+    <thead><tr><th id="thName" style="cursor:pointer;">Nome Bambino ▲</th><th>Genitore</th><th>Telefono</th><th>Azioni</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div id="overlay" onclick="closeModal(event)">
+    <div id="modal">
+      <button id="closeModal" onclick="closeModal(event)">&times;</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
   <script>
   const key = 'campIscritti';
   const uid = () => 'id_' + Date.now();
