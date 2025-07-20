@@ -33,7 +33,10 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5aXF2aGRyZXVwaG50ZXBqbWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNDUwMzksImV4cCI6MjA2ODYyMTAzOX0.81oI7d7M8baIDYhsLMpqwrDGXkqF714k7bX73ZpQnsY'
     );
 
-   
+   const key = 'campIscritti';
+const getList = () => JSON.parse(localStorage.getItem(key) || '[]');
+const saveList = l => localStorage.setItem(key, JSON.stringify(l));
+const uid = () => 'id_' + Date.now();
     let sortDir = 1;
 
     async function fetchFromSupabase() {
