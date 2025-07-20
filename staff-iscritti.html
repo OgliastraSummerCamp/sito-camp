@@ -133,6 +133,37 @@
     f.reset();
     render();
   });
+  
+  // --- Delete function (global) ---
+function deleteIscritto(i){
+  if(confirm('Vuoi davvero eliminare questo iscritto?')){
+    const list = getList();
+    list.splice(i,1);
+    saveList(list);
+    render();
+  }
+}
+
+
+// --- nuove funzioni id-safe ---
+function loadEditById(id){
+  const list = getList();
+  const idx = list.findIndex(x => x.id === id);
+  if(idx === -1) return;
+  editing = idx;
+  const o = list[idx];
+  const f = document.forms['regForm'];
+  Object.entries(o).forEach(([k,v])=>{ if(f.elements[k]) f.elements[k].value = v; });
+  window.scrollTo({top: f.offsetTop - 60, behavior: 'smooth'});
+}
+    function deleteIscrittoById(id){
+  if(confirm('Vuoi davvero eliminare questo iscritto?')){
+    const list = getList().filter(x => x.id !== id);
+    saveList(list);
+    render();
+  }
+}
+  
   </script>
 </body>
 </html>
