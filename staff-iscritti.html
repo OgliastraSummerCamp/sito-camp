@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -46,28 +47,28 @@
   <form id="regForm">
     <input type="hidden" name="id">
     <fieldset>
-      <legend>Bambino</legend>
-      <label>Cognome e Nome<input name="bambino_nome"></label>
-      <label>Luogo di Nascita<input name="bambino_luogo_nascita"></label>
-      <label>Data di Nascita<input type="date" name="bambino_data_nascita"></label>
-      <label>Codice Fiscale<input name="bambino_cf"></label>
-      <label>Intolleranze<input name="intolleranze"></label>
-      <label>Terapie<input name="terapie"></label>
-      <label>Autorizzazione Foto<select name="privacy_foto"><option value="si">Sì</option><option value="no">No</option></select></label>
+    <legend>Bambino</legend>
+    <label>Cognome e Nome<input name="bambino_nome"></label>
+    <label>Luogo di Nascita<input name="bambino_luogo_nascita"></label>
+    <label>Data di Nascita<input type="date" name="bambino_data_nascita"></label>
+    <label>Codice Fiscale<input name="bambino_cf"></label>
+    <label>Intolleranze / Allergie<input name="intolleranze"></label>
+    <label>Terapie in Corso<input name="terapie"></label>
+    <label>Autorizzazione Foto<select name="privacy_foto"><option value="si">Sì</option><option value="no">No</option></select></label>
     </fieldset>
     <fieldset>
-      <legend>Genitore</legend>
-      <label>Cognome e Nome<input name="genitore_nome"></label>
-      <label>Luogo di Nascita<input name="genitore_luogo_nascita"></label>
-      <label>Data di Nascita<input type="date" name="genitore_data_nascita"></label>
-      <label>Codice Fiscale<input name="genitore_cf"></label>
-      <label>Residenza<input name="genitore_res"></label>
-      <label>Email<input type="email" name="email"></label>
-      <label>Telefono<input name="telefono"></label>
+    <legend>Genitore</legend>
+    <label>Cognome e Nome<input name="genitore_nome"></label>
+    <label>Luogo di Nascita<input name="genitore_luogo_nascita"></label>
+    <label>Data di Nascita<input type="date" name="genitore_data_nascita"></label>
+    <label>Codice Fiscale<input name="genitore_cf"></label>
+    <label>Residenza<input name="genitore_res"></label>
+    <label>Email<input type="email" name="email"></label>
+    <label>Telefono<input name="telefono"></label>
     </fieldset>
-    <button type="submit">Salva iscrizione</button>
+    <button type="submit" class="submit">Salva iscrizione</button>
   </form>
- <table id="tabIscritti">
+  <table id="tabIscritti">
     <thead><tr><th id="thName" style="cursor:pointer;">Nome Bambino ▲</th><th>Genitore</th><th>Telefono</th><th>Azioni</th></tr></thead>
     <tbody></tbody>
   </table>
@@ -77,20 +78,25 @@
       <div id="modalBody"></div>
     </div>
   </div>
-  <script>
-    
-    /* Sessione AGGIUNTO */
+<script>
+/* Sessione */
 function logout(){sessionStorage.removeItem('loggedStaff');location.href='login-staff.html';}
 function checkSession(){if(!sessionStorage.getItem('loggedStaff')) location='login-staff.html';}
 
 /* Storage utilities */
-  const key = 'campIscritti';
-  const uid = () => 'id_' + Date.now();
-  const getList = () => JSON.parse(localStorage.getItem(key) || '[]');
-  const saveList = l => localStorage.setItem(key, JSON.stringify(l));
-  let editing = null;
+const key='campIscritti';
+const uid=()=> 'id_'+Date.now();
+const getList=()=> JSON.parse(localStorage.getItem(key)||'[]');
+const saveList=l=> localStorage.setItem(key,JSON.stringify(l));
 
- function render(){
+let editing=null;
+let sortDir=1;
+
+function displayNameSort(o){
+  return (o.bambino_nome||'').toLowerCase().trim();
+}
+
+function render(){
   const tbody=document.querySelector('#tabIscritti tbody');tbody.innerHTML='';
   getList().slice().sort((a,b)=> sortDir*displayNameSort(a).localeCompare(displayNameSort(b),"it",{sensitivity:"base"})).forEach((o,i)=>{
     const tr=document.createElement('tr');
@@ -129,6 +135,34 @@ function deleteIscritto(i){
     const list=getList();
     list.splice(i,1);
     saveList(list);
+
+// --- Invio a Google Sheets ---
+try {
+  const toSend = new FormData();
+  toSend.append("foglio", "Iscrizioni_Staff");
+  toSend.append("bambino_nome", data.bambino_nome);
+  toSend.append("bambino_luogo_nascita", data.bambino_luogo_nascita);
+  toSend.append("bambino_data_nascita", data.bambino_data_nascita);
+  toSend.append("bambino_cf", data.bambino_cf);
+  toSend.append("intolleranze", data.intolleranze);
+  toSend.append("terapie", data.terapie);
+  toSend.append("privacy_foto", data.privacy_foto);
+  toSend.append("genitore_nome", data.genitore_nome);
+  toSend.append("genitore_luogo_nascita", data.genitore_luogo_nascita);
+  toSend.append("genitore_data_nascita", data.genitore_data_nascita);
+  toSend.append("genitore_cf", data.genitore_cf);
+  toSend.append("genitore_res", data.genitore_res);
+  toSend.append("email", data.email);
+  toSend.append("telefono", data.telefono);
+
+  fetch("https://script.google.com/macros/s/AKfycbyX9pB4Z-z5N7ElRCLFZnQuB30nrrReLjwcnXOvZnuxccOAgN5ZURK4tnKr56hn9iKbXQ/exec", {
+    method: "POST",
+    body: toSend
+  });
+} catch (e) {
+  console.warn("Errore invio Google Sheets", e);
+}
+
     render();
   }
 }
@@ -141,7 +175,35 @@ document.forms['regForm'].addEventListener('submit',e=>{
   const list=getList();
   if(editing!==null){ data.id=list[editing].id; list[editing]=data; editing=null;}
   else{ data.id=uid(); list.push(data);}
-  saveList(list); f.reset(); render();
+  saveList(list);
+
+// --- Invio a Google Sheets ---
+try {
+  const toSend = new FormData();
+  toSend.append("foglio", "Iscrizioni_Staff");
+  toSend.append("bambino_nome", data.bambino_nome);
+  toSend.append("bambino_luogo_nascita", data.bambino_luogo_nascita);
+  toSend.append("bambino_data_nascita", data.bambino_data_nascita);
+  toSend.append("bambino_cf", data.bambino_cf);
+  toSend.append("intolleranze", data.intolleranze);
+  toSend.append("terapie", data.terapie);
+  toSend.append("privacy_foto", data.privacy_foto);
+  toSend.append("genitore_nome", data.genitore_nome);
+  toSend.append("genitore_luogo_nascita", data.genitore_luogo_nascita);
+  toSend.append("genitore_data_nascita", data.genitore_data_nascita);
+  toSend.append("genitore_cf", data.genitore_cf);
+  toSend.append("genitore_res", data.genitore_res);
+  toSend.append("email", data.email);
+  toSend.append("telefono", data.telefono);
+
+  fetch("https://script.google.com/macros/s/AKfycbyX9pB4Z-z5N7ElRCLFZnQuB30nrrReLjwcnXOvZnuxccOAgN5ZURK4tnKr56hn9iKbXQ/exec", {
+    method: "POST",
+    body: toSend
+  });
+} catch (e) {
+  console.warn("Errore invio Google Sheets", e);
+}
+ f.reset(); render();
 });
 
 function init(){
@@ -163,6 +225,34 @@ function deleteIscritto(i){
     const list = getList();
     list.splice(i,1);
     saveList(list);
+
+// --- Invio a Google Sheets ---
+try {
+  const toSend = new FormData();
+  toSend.append("foglio", "Iscrizioni_Staff");
+  toSend.append("bambino_nome", data.bambino_nome);
+  toSend.append("bambino_luogo_nascita", data.bambino_luogo_nascita);
+  toSend.append("bambino_data_nascita", data.bambino_data_nascita);
+  toSend.append("bambino_cf", data.bambino_cf);
+  toSend.append("intolleranze", data.intolleranze);
+  toSend.append("terapie", data.terapie);
+  toSend.append("privacy_foto", data.privacy_foto);
+  toSend.append("genitore_nome", data.genitore_nome);
+  toSend.append("genitore_luogo_nascita", data.genitore_luogo_nascita);
+  toSend.append("genitore_data_nascita", data.genitore_data_nascita);
+  toSend.append("genitore_cf", data.genitore_cf);
+  toSend.append("genitore_res", data.genitore_res);
+  toSend.append("email", data.email);
+  toSend.append("telefono", data.telefono);
+
+  fetch("https://script.google.com/macros/s/AKfycbyX9pB4Z-z5N7ElRCLFZnQuB30nrrReLjwcnXOvZnuxccOAgN5ZURK4tnKr56hn9iKbXQ/exec", {
+    method: "POST",
+    body: toSend
+  });
+} catch (e) {
+  console.warn("Errore invio Google Sheets", e);
+}
+
     render();
   }
 }
@@ -184,6 +274,34 @@ function deleteIscrittoById(id){
   if(confirm('Vuoi davvero eliminare questo iscritto?')){
     const list = getList().filter(x => x.id !== id);
     saveList(list);
+
+// --- Invio a Google Sheets ---
+try {
+  const toSend = new FormData();
+  toSend.append("foglio", "Iscrizioni_Staff");
+  toSend.append("bambino_nome", data.bambino_nome);
+  toSend.append("bambino_luogo_nascita", data.bambino_luogo_nascita);
+  toSend.append("bambino_data_nascita", data.bambino_data_nascita);
+  toSend.append("bambino_cf", data.bambino_cf);
+  toSend.append("intolleranze", data.intolleranze);
+  toSend.append("terapie", data.terapie);
+  toSend.append("privacy_foto", data.privacy_foto);
+  toSend.append("genitore_nome", data.genitore_nome);
+  toSend.append("genitore_luogo_nascita", data.genitore_luogo_nascita);
+  toSend.append("genitore_data_nascita", data.genitore_data_nascita);
+  toSend.append("genitore_cf", data.genitore_cf);
+  toSend.append("genitore_res", data.genitore_res);
+  toSend.append("email", data.email);
+  toSend.append("telefono", data.telefono);
+
+  fetch("https://script.google.com/macros/s/AKfycbyX9pB4Z-z5N7ElRCLFZnQuB30nrrReLjwcnXOvZnuxccOAgN5ZURK4tnKr56hn9iKbXQ/exec", {
+    method: "POST",
+    body: toSend
+  });
+} catch (e) {
+  console.warn("Errore invio Google Sheets", e);
+}
+
     render();
   }
 }
