@@ -56,7 +56,7 @@
   const f = e.target;
   const data = Object.fromEntries(new FormData(f).entries());
 
-  // Aggiungi il campo data manualmente
+  // Aggiungiamo il campo data per compatibilità con il db
   data.data = new Date().toISOString();
 
   const { error } = await supabase.from('iscritti').insert([data]);
@@ -69,6 +69,7 @@
     fetchFromSupabase();
   }
 });
+
 
 
       fetchFromSupabase();
