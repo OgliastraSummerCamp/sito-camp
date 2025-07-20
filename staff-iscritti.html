@@ -34,19 +34,43 @@
 <!-- Supabase client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script>
-  const supabase = supabase.createClient(
-    'https://hyiqvhdreuphntepjmfd.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5aXF2aGRyZXVwaG50ZXBqbWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNDUwMzksImV4cCI6MjA2ODYyMTAzOX0.81oI7d7M8baIDYhsLMpqwrDGXkqF714k7bX73ZpQnsY'
-  );
+const supabase = supabase.createClient(
+  'https://hyiqvhdreuphntepjmfd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+);
 
-  async function salvaSuSupabase(data) {
-    try {
-      const { error } = await supabase.from('iscritti').insert([data]);
-      if (error) console.error("Errore Supabase:", error.message);
-    } catch (e) {
-      console.error("Errore fetch Supabase:", e);
-    }
+document.forms['regForm'].addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target;
+
+  const { error } = await supabase
+    .from('iscritti')
+    .insert([{
+      bambino_nome: f.bambino_nome.value,
+      bambino_luogo_nascita: f.bambino_luogo_nascita.value,
+      bambino_data_nascita: f.bambino_data_nascita.value,
+      bambino_cf: f.bambino_cf.value,
+      intolleranze: f.intolleranze.value,
+      terapie: f.terapie.value,
+      privacy_foto: f.privacy_foto.value,
+      genitore_nome: f.genitore_nome.value,
+      genitore_luogo_nascita: f.genitore_luogo_nascita.value,
+      genitore_data_nascita: f.genitore_data_nascita.value,
+      genitore_cf: f.genitore_cf.value,
+      genitore_res: f.genitore_res.value,
+      email: f.email.value,
+      telefono: f.telefono.value
+    }]);
+
+  if (error) {
+    console.error('Errore Supabase:', error.message);
+    alert('Errore nel salvataggio!');
+  } else {
+    alert('Dati salvati correttamente!');
+    f.reset();
   }
+});
+
 </script>
 
 </head>
