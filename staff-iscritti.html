@@ -52,20 +52,24 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       document.forms['regForm'].addEventListener('submit', async e => {
-        e.preventDefault();
-        const f = e.target;
-        const data = Object.fromEntries(new FormData(f).entries());
+  e.preventDefault();
+  const f = e.target;
+  const data = Object.fromEntries(new FormData(f).entries());
 
-        const { error } = await supabase.from('iscritti').insert([data]);
-        if (error) {
-          console.error('Errore Supabase:', error.message);
-          alert('Errore nel salvataggio!');
-        } else {
-          alert('Dati salvati correttamente!');
-          f.reset();
-          fetchFromSupabase();
-        }
-      });
+  // Aggiungi il campo data manualmente
+  data.data = new Date().toISOString();
+
+  const { error } = await supabase.from('iscritti').insert([data]);
+  if (error) {
+    console.error('Errore Supabase:', error.message);
+    alert('Errore nel salvataggio!');
+  } else {
+    alert('Dati salvati correttamente!');
+    f.reset();
+    fetchFromSupabase();
+  }
+});
+
 
       fetchFromSupabase();
     });
