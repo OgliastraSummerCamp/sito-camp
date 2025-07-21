@@ -91,19 +91,7 @@ function render() {
       fetchFromSupabase();
     });
 
-    function render() {
-      const tbody = document.querySelector('#tabIscritti tbody');
-      tbody.innerHTML = '';
-      getList().slice().sort((a, b) => sortDir * a.bambino_nome.localeCompare(b.bambino_nome)).forEach(o => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${o.bambino_nome}</td>
-          <td>${o.genitore_nome}</td>
-          <td>${o.telefono}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
+
   </script>
 </head>
 <body>
